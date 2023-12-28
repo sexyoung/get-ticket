@@ -1,0 +1,59 @@
+# https://dev.to/dyarleniber/setting-up-a-ci-cd-workflow-on-github-actions-for-a-react-app-with-github-pages-and-codecov-4hnp
+# 隨便加個東西再跑一次試試
+name: deploy to dev server
+on:
+  push:
+    branches: [ main ]
+
+jobs:
+  build:
+    runs-on: ubuntu-latest
+    steps:
+
+    - name: 使用 node 18.16.0
+      uses: actions/setup-node@v3
+      with:
+        node-version: '18.16.0'
+
+    - name: 下載程式碼 & 下載 submodules
+      uses: actions/checkout@v3
+      with:
+        submodules: recursive
+
+    - name: 建立快照 (node_modules)
+      uses: actions/cache@v3
+      with:
+        path: |
+          **/node_modules
+        key: ${{ runner.os }}-${{ hashFiles('**/package-lock.json') }}
+
+    - name: 安裝 node 套件
+      run: npm i
+
+    - name: 給予環境變數
+      run: |
+        touch .env
+        echo "SLACK_WEBHOOK_URL=${{secrets.SLACK_WEBHOOK_URL}}" >> .env
+        echo "URL1=${{secrets.URL1}}" >> .env
+        echo "URL2=${{secrets.URL2}}" >> .env
+        echo "URL3=${{secrets.URL3}}" >> .env
+        cat .env
+
+    - name: 上傳程式碼到server
+      uses: appleboy/scp-action@master
+      with:
+        HOST: ${{secrets.HOST}}
+        USERNAME: ${{secrets.USER}}
+        PORT: 22
+        KEY: ${{ secrets.KEY }}
+        source: "./,!.git,!build.zip"
+        target: "~/web/get-ticket"
+
+    - name: 重啟 get-ticket
+      uses: appleboy/ssh-action@master
+      with:
+        HOST: ${{secrets.HOST}}
+        USERNAME: ${{secrets.USER}}
+        PORT: 22
+        KEY: ${{ secrets.KEY }}
+        script: pm2 restart get-ticket
