@@ -30,7 +30,6 @@ function fetchData(ticketInfo) {
         await webhook.send({
           text: `${ticketInfo.name} 有票了!!!! \n ${ticketInfo.url}`,
         });
-        ticketInfo.prevAvailable = nowAvailable;
         // console.log(`網頁中存在 class: "${targetClass}"`);
       } else {
         await webhook.send({
@@ -38,6 +37,7 @@ function fetchData(ticketInfo) {
         });
         // console.log(`網頁中不存在 class: "${targetClass}"`);
       }
+      ticketInfo.prevAvailable = nowAvailable;
     })
     .catch(error => {
       console.error('發生錯誤:', error.message);
